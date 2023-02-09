@@ -31,6 +31,7 @@ argb2rgba(PY_UINT32_T *buf, Py_ssize_t len)
         u8 a = val >> 24;
         switch (a) {
         case 0:
+            buf[cur] = 0xffffff;
             break;
         case 255:
             val = (val << 8) | a;
