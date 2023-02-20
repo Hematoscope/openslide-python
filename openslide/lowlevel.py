@@ -35,6 +35,7 @@ from ctypes import (
     byref,
     c_char_p,
     c_double,
+    c_float,
     c_int32,
     c_int64,
     c_size_t,
@@ -46,6 +47,7 @@ from itertools import count
 import platform
 
 import PIL.Image
+import numpy as np
 
 from . import _convert
 
@@ -311,6 +313,26 @@ def read_region(slide, x, y, level, w, h):
     _read_region(slide, buf, x, y, level, w, h)
     return _load_image(buf, (w, h))
 
+def read_tensor(slide, x, y, level, w, h):
+    if w < 0 or h < 0:
+        # OpenSlide would catch this, but not before we tried to allocate
+        # a negative-size buffer
+        raise OpenSlideError(
+            "negative width (%d) or negative height (%d) not allowed" % (w, h)
+        )
+    if w == 0 or h == 0:
+        # PIL.Image.frombuffer() would raise an exception
+        return np.zeros((3, 0, 0), dtype=np.float32)
+    # Allocate a 32-bit C-like array
+    argb_buffer = (w * h * c_uint32)()
+    # Allocate a float C-like array
+    image_buffer = (3 * w * h * c_float)()
+    # Call to openslide C-library
+    _read_region(slide, argb_buffer, x, y, level, w, h)
+    # Convert ARGB image to float RGB image
+    _convert.argb2float(argb_buffer, image_buffer)
+    image_array = np.frombuffer(image_buffer, np.float32).reshape(h, w, 3)
+    return image_array.transpose(2, 0, 1)
 
 get_error = _func('openslide_get_error', c_char_p, [_OpenSlide], _check_string)
 

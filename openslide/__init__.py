@@ -237,6 +237,26 @@ class OpenSlide(AbstractSlide):
             self._osr, location[0], location[1], level, size[0], size[1]
         )
 
+    def read_tensor(self, location, level, size):
+        """Return (3, H, W) float-array
+
+        Args:
+            location:   (x, y) tuple giving the top left pixel in the level 0
+                        reference frame.
+            level:      the level number.
+            size:       (width, height) tuple giving the region size.
+        Returns:
+            image:      (3, height, width) numpy 32-bit float array
+        """
+        return lowlevel.read_tensor(
+            self._osr,
+            location[0],
+            location[1],
+            level,
+            size[0],
+            size[1],
+        )
+
     def set_cache(self, cache):
         """Use the specified cache to store recently decoded slide tiles.
 
